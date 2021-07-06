@@ -1,13 +1,15 @@
 import React, { useCallback, useState } from 'react';
 import { Header, Form, Label, Input, LinkContainer, Button } from '@pages/SignUp/styles';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link, Redirect } from 'react-router-dom';
 import useInput from '@hooks/useInput';
 import useSWR from 'swr';
 import { fetcher } from '@utils/fetcher';
 
 export default function Login() {
-  const { data, error } = useSWR('http://localhost:3095/api/users', fetcher);
+  const { data, error, revalidate, mutate } = useSWR('http://localhost:3095/api/users', fetcher, {
+    dedupingInterval: 100000,
+  });
   const [loginError, setLoginError] = useState(false);
   const [email, , setEmail] = useInput('');
   const [password, , setPassword] = useInput('');
@@ -34,12 +36,21 @@ export default function Login() {
           { withCredentials: true },
         )
         .then((response) => {
-          console.log(response);
+          mutate(response.data, false);
+          // revalidate();
         })
         .catch((error) => console.log(error));
     },
     [email, password],
   );
+
+  if (data === undefined) {
+    return <div>loading...</div>;
+  }
+
+  if (data) {
+    return <Redirect to="/workspace/sleact/channel/일반" />;
+  }
 
   return (
     <div id="container">
