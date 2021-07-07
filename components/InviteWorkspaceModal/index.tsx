@@ -4,7 +4,7 @@ import { Button, Input, Label } from '@pages/SignUp/styles';
 import axios from 'axios';
 import useSWR from 'swr';
 import { IChannel, IUser } from '@typings/db';
-import { fetcher } from '@utils/fetcher';
+import fetcher from '@utils/fetcher';
 import { useParams } from 'react-router';
 
 interface Props {
@@ -18,7 +18,7 @@ const InviteWorkspaceModal: FC<Props> = ({ show, onCloseModal, setShowInviteWork
   const { workspace } = useParams<{ workspace: string }>();
   const { data: userData } = useSWR<IUser>('/api/users', fetcher);
   const { revalidate: revalidateMembers } = useSWR<IUser[]>(
-    userData ? `http://localhost:3095/api/workspaces/${workspace}/members` : null,
+    userData ? `/api/workspaces/${workspace}/members` : null,
     fetcher,
   );
 
@@ -27,11 +27,7 @@ const InviteWorkspaceModal: FC<Props> = ({ show, onCloseModal, setShowInviteWork
       e.preventDefault();
       if (!newMember || !newMember.trim()) return;
       axios
-        .post(
-          `http://localhost:3095/api/workspaces/${workspace}/members`,
-          { email: newMember },
-          { withCredentials: true },
-        )
+        .post(`/api/workspaces/${workspace}/members`, { email: newMember }, { withCredentials: true })
         .then(() => {
           setNewMember('');
           setShowInviteWorkspaceModal(false);

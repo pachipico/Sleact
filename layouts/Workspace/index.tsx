@@ -1,6 +1,6 @@
 import React, { VFC, useCallback, useState } from 'react';
 import useSWR from 'swr';
-import { fetcher } from '@utils/fetcher';
+
 import axios from 'axios';
 import { Redirect, Route, Switch, useParams } from 'react-router';
 import lodable from '@loadable/component';
@@ -31,6 +31,9 @@ import { toast } from 'react-toastify';
 import CreateChannelModal from '@components/CreateChannelModal';
 import InviteWorkspaceModal from '@components/InviteWorkspaceModal';
 import InviteChannelModal from '@components/InviteChannelModal';
+import DMList from '@components/DMList';
+import ChannelList from '@components/ChannelList';
+import fetcher from '@utils/fetcher';
 
 const Channel = lodable(() => import('@pages/Channel'));
 const DirectMessage = lodable(() => import('@pages/DirectMessage'));
@@ -45,20 +48,16 @@ const Workspace: VFC = () => {
   const [showInviteWorkspaceModal, setShowInviteWorkspaceModal] = useState(false);
   const [showInviteChannelModal, setShowInviteChannelModal] = useState(false);
   const { workspace } = useParams<{ workspace: string }>();
-  const { data: userData, error, revalidate, mutate } = useSWR<IUser | false>(
-    'http://localhost:3095/api/users',
-    fetcher,
-  );
-  const { data: channelData } = useSWR<IChannel[]>(
-    userData ? `http://localhost:3095/api/workspaces/${workspace}/channels` : null,
-    fetcher,
-  );
-
+  const { data: userData, error, revalidate, mutate } = useSWR<IUser | false>('/api/users', fetcher, {
+    dedupingInterval: 1000000,
+  });
+  const { data: channelData } = useSWR<IChannel[]>(userData ? `/api/workspaces/${workspace}/channels` : null, fetcher);
+  const { data: membersData } = useSWR<IUser[]>(userData ? `/api/workspaces/${workspace}/members` : null, fetcher);
   const onLogout = useCallback(() => {
-    axios.post('http://localhost:3095/api/users/logout', null, { withCredentials: true }).then((response) => {
+    axios.post('/api/users/logout', null, { withCredentials: true }).then((response) => {
       mutate(false, false);
     });
-  }, []);
+  }, [mutate]);
 
   const onCloseUserProfile = useCallback((e) => {
     e.stopPropagation();
@@ -86,11 +85,7 @@ const Workspace: VFC = () => {
       if (!newWorkspace || !newWorkspace.trim()) return;
       if (!newUrl || !newUrl.trim()) return;
       axios
-        .post(
-          'http://localhost:3095/api/workspaces',
-          { workspace: newWorkspace, url: newUrl },
-          { withCredentials: true },
-        )
+        .post('/api/workspaces', { workspace: newWorkspace, url: newUrl }, { withCredentials: true })
         .then(() => {
           revalidate();
           setShowCreateWorkspaceModal(false);
@@ -144,13 +139,15 @@ const Workspace: VFC = () => {
       </Header>
       <WorkspaceWrapper>
         <Workspaces>
-          {userData?.Workspaces?.map((ws) => {
-            return (
-              <Link to={`/workspace/${ws.name}/channel/일반`} key={ws.id}>
-                <WorkspaceButton>{ws.name.slice(0, 1).toUpperCase()}</WorkspaceButton>
-              </Link>
-            );
-          })}
+          {userData && console.log(userData)}
+          {userData &&
+            userData.Workspaces.map((ws) => {
+              return (
+                <Link to={`/workspace/${123}/channel/일반`} key={ws.id}>
+                  <WorkspaceButton>{ws.name.slice(0, 1).toUpperCase()}</WorkspaceButton>
+                </Link>
+              );
+            })}
           <AddButton onClick={onClickCreateWorkspace}>+</AddButton>
         </Workspaces>
         <Channels>
@@ -164,13 +161,8 @@ const Workspace: VFC = () => {
                 <button onClick={onLogout}>log out</button>
               </WorkspaceModal>
             </Menu>
-            {channelData?.map((channel) => {
-              return (
-                <Link to={`/workspace/${workspace}/channel/${channel.name}`} key={channel.id}>
-                  {channel.name}
-                </Link>
-              );
-            })}
+            <ChannelList />
+            <DMList />
           </MenuScroll>
         </Channels>
         <Chats>

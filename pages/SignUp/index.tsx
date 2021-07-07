@@ -3,11 +3,11 @@ import { Header, Form, Label, Input, Button, LinkContainer, Error, Success } fro
 import axios from 'axios';
 import { Link, Redirect } from 'react-router-dom';
 import useInput from '@hooks/useInput';
-import { fetcher } from '@utils/fetcher';
+import fetcher from '@utils/fetcher';
 import useSWR from 'swr';
 
 export default function SignUp(): JSX.Element {
-  const { data, error, revalidate } = useSWR('http://localhost:3095/api/users', fetcher);
+  const { data, error, revalidate } = useSWR('/api/users', fetcher);
   const [email, onChangeEmail] = useInput('');
   const [nickname, onChangeNickname] = useInput('');
   const [password, setPassword] = useState('');
@@ -41,7 +41,7 @@ export default function SignUp(): JSX.Element {
         setSignUpSuccess(false);
         axios
           .post(
-            'http://localhost:3095/api/users',
+            '/api/users',
             {
               email,
               nickname,

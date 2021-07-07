@@ -4,10 +4,10 @@ import axios from 'axios';
 import { Link, Redirect } from 'react-router-dom';
 import useInput from '@hooks/useInput';
 import useSWR from 'swr';
-import { fetcher } from '@utils/fetcher';
+import fetcher from '@utils/fetcher';
 
 export default function Login() {
-  const { data, error, revalidate, mutate } = useSWR('http://localhost:3095/api/users', fetcher, {
+  const { data, error, revalidate, mutate } = useSWR('/api/users', fetcher, {
     dedupingInterval: 100000,
   });
   const [loginError, setLoginError] = useState(false);
@@ -28,7 +28,7 @@ export default function Login() {
       console.log(email, password);
       axios
         .post(
-          'http://localhost:3095/api/users/login',
+          '/api/users/login',
           {
             email,
             password,
