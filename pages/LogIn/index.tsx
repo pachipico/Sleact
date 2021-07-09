@@ -36,8 +36,8 @@ export default function Login() {
           { withCredentials: true },
         )
         .then((response) => {
-          mutate(response.data, false);
-          // revalidate();
+          // mutate(response.data, false);
+          revalidate();
         })
         .catch((error) => console.log(error));
     },

@@ -1,4 +1,4 @@
-import React, { VFC, useCallback, useState } from 'react';
+import React, { VFC, useCallback, useState, useEffect } from 'react';
 import useSWR from 'swr';
 
 import axios from 'axios';
@@ -34,6 +34,7 @@ import InviteChannelModal from '@components/InviteChannelModal';
 import DMList from '@components/DMList';
 import ChannelList from '@components/ChannelList';
 import fetcher from '@utils/fetcher';
+import useSocket from '@hooks/useSocket';
 
 const Channel = lodable(() => import('@pages/Channel'));
 const DirectMessage = lodable(() => import('@pages/DirectMessage'));
@@ -48,11 +49,27 @@ const Workspace: VFC = () => {
   const [showInviteWorkspaceModal, setShowInviteWorkspaceModal] = useState(false);
   const [showInviteChannelModal, setShowInviteChannelModal] = useState(false);
   const { workspace } = useParams<{ workspace: string }>();
+  const [socket, disconnect] = useSocket(workspace);
+
   const { data: userData, error, revalidate, mutate } = useSWR<IUser | false>('/api/users', fetcher, {
     dedupingInterval: 1000000,
   });
   const { data: channelData } = useSWR<IChannel[]>(userData ? `/api/workspaces/${workspace}/channels` : null, fetcher);
   const { data: membersData } = useSWR<IUser[]>(userData ? `/api/workspaces/${workspace}/members` : null, fetcher);
+
+  useEffect(() => {
+    if (channelData && userData && socket) {
+      console.log(socket);
+
+      socket.emit('login', { id: userData.id, channels: channelData.map((v) => v.id) });
+    }
+  }, [socket, userData, channelData]);
+  useEffect(() => {
+    return () => {
+      disconnect();
+    };
+  }, [disconnect]);
+
   const onLogout = useCallback(() => {
     axios.post('/api/users/logout', null, { withCredentials: true }).then((response) => {
       mutate(false, false);
