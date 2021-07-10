@@ -8,6 +8,7 @@ import { useParams } from 'react-router-dom';
 import ChatBox from '@components/ChatBox';
 import ChatList from '@components/ChatList';
 import useInput from '@hooks/useInput';
+import useSocket from '@hooks/useSocket';
 import axios from 'axios';
 import makeSection from '@utils/makeSection';
 import { Scrollbars } from 'react-custom-scrollbars';
@@ -16,7 +17,7 @@ const DirectMessage: FC = () => {
   const { workspace, id } = useParams<{ workspace: string; id: string }>();
   const { data: userData } = useSWR<IUser>(`/api/workspaces/${workspace}/users/${id}`, fetcher);
   const { data: myData } = useSWR<IUser>(`/api/users`, fetcher);
-  const { data: chatData, mutate: mutateChat, revalidate, setSize } = useSWRInfinite(
+  const { data: chatData, mutate: mutateChat, revalidate, setSize } = useSWRInfinite<IDM[]>(
     (index) => `/api//workspaces/${workspace}/dms/${id}/chats?perPage=20&page=${index + 1}`,
     fetcher,
   );
@@ -26,6 +27,7 @@ const DirectMessage: FC = () => {
 
   const scrollbarRef = useRef<Scrollbars>(null);
   const [chat, onChangeChat, setChat] = useInput('');
+  const [socket] = useSocket(workspace);
 
   useEffect(() => {
     if (chatData?.length === 1) {
@@ -65,6 +67,32 @@ const DirectMessage: FC = () => {
     },
     [chat, chatData, myData, userData, workspace, id],
   );
+  const onMessage = useCallback((data: IDM) => {
+    if (data.SenderId === Number(id) && myData?.id !== Number(id)) {
+      mutateChat((chatData) => {
+        chatData?.[0].unshift(data);
+        return chatData;
+      }, false).then(() => {
+        if (scrollbarRef.current) {
+          if (
+            scrollbarRef.current.getScrollHeight() <
+            scrollbarRef.current.getClientHeight() + scrollbarRef.current.getScrollTop() + 150
+          ) {
+            console.log('scrollbar bottom', scrollbarRef.current.getValues);
+            scrollbarRef.current.scrollToBottom();
+          }
+        }
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    socket?.on('dm', onMessage);
+
+    return () => {
+      socket?.off('dm', onMessage);
+    };
+  }, [socket, onMessage]);
 
   const chatSections = makeSection(chatData ? chatData.flat().reverse() : []);
 
