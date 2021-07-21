@@ -53,6 +53,7 @@ const DirectMessage: FC = () => {
           return prevChatData;
         }, false).then(() => {
           setChat('');
+          localStorage.setItem(`${workspace}-${id}`, new Date().getTime().toString());
           scrollbarRef?.current?.scrollToBottom();
         });
 
@@ -97,6 +98,10 @@ const DirectMessage: FC = () => {
 
   const chatSections = makeSection(chatData ? chatData.flat().reverse() : []);
 
+  useEffect(() => {
+    localStorage.setItem(`${workspace}-${id}`, new Date().getTime().toString());
+  }, [workspace, id]);
+
   const onDrop = useCallback(
     (e) => {
       e.preventDefault();
@@ -118,6 +123,7 @@ const DirectMessage: FC = () => {
       }
       axios.post(`/api/workspaces/${workspace}/dms/${id}/images`, formData).then(() => {
         setDragOver(false);
+        localStorage.setItem(`${workspace}-${id}`, new Date().getTime().toString());
         revalidate();
       });
     },

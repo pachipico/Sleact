@@ -56,6 +56,7 @@ const Channel = () => {
           return prevChatData;
         }, false).then(() => {
           setChat('');
+          localStorage.setItem(`${workspace}-${channel}`, new Date().getTime().toString());
           scrollbarRef.current?.scrollToBottom();
         });
         axios
@@ -102,6 +103,10 @@ const Channel = () => {
       socket?.off('message', onMessage);
     };
   }, [socket, onMessage]);
+
+  useEffect(() => {
+    localStorage.setItem(`${workspace}-${channel}`, new Date().getTime().toString());
+  }, [workspace, channel]);
 
   // 로딩 시 스크롤바 제일 아래로
   useEffect(() => {
@@ -159,6 +164,7 @@ const Channel = () => {
       }
       axios.post(`/api/workspaces/${workspace}/channels/${channel}/images`, formData).then(() => {
         setDragOver(false);
+        localStorage.setItem(`${workspace}-${channel}`, new Date().getTime().toString());
       });
     },
     [workspace, channel],
