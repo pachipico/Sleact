@@ -17,7 +17,9 @@ const Channel = () => {
   const { workspace, channel } = useParams<{ workspace: string; channel: string }>();
   const { data: myData } = useSWR('/api/users', fetcher);
   const [chat, onChangeChat, setChat] = useInput('');
-  const { data: channelData } = useSWR<IChannel>(`/api/workspaces/${workspace}/channels/${channel}`, fetcher);
+  const { data: channelsData, error } = useSWR<IChannel[]>(`/api/workspaces/${workspace}/channels`, fetcher);
+  const channelData = channelsData?.find((v) => v.name === channel);
+
   const { data: chatData, mutate: mutateChat, revalidate, setSize } = useSWRInfinite<IChat[]>(
     (index) => `/api/workspaces/${workspace}/channels/${channel}/chats?perPage=20&page=${index + 1}`,
     fetcher,
@@ -40,7 +42,7 @@ const Channel = () => {
   const onSubmitForm = useCallback(
     (e) => {
       e.preventDefault();
-      console.log(chat);
+      console.log(channelData);
       if (chat?.trim() && chatData && channelData) {
         const savedChat = chat;
         mutateChat((prevChatData) => {
@@ -55,13 +57,13 @@ const Channel = () => {
           });
           return prevChatData;
         }, false).then(() => {
-          setChat('');
           localStorage.setItem(`${workspace}-${channel}`, new Date().getTime().toString());
+          setChat('');
           scrollbarRef.current?.scrollToBottom();
         });
         axios
           .post(`/api/workspaces/${workspace}/channels/${channel}/chats`, {
-            content: chat,
+            content: savedChat,
           })
           .then(() => {
             revalidate();

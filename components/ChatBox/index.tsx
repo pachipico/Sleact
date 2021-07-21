@@ -26,7 +26,7 @@ const ChatBox: VFC<Props> = ({ chat, onSubmitForm, onChangeChat, placeholder }) 
     if (textareaRef.current) {
       autosize(textareaRef.current);
     }
-  }, []);
+  }, [textareaRef.current]);
 
   const onKeydownChat = useCallback(
     (e) => {
@@ -37,7 +37,7 @@ const ChatBox: VFC<Props> = ({ chat, onSubmitForm, onChangeChat, placeholder }) 
         }
       }
     },
-    [onSubmitForm],
+    [chat],
   );
 
   const renderSuggestion = useCallback(
