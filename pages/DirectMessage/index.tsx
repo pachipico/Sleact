@@ -34,6 +34,7 @@ const DirectMessage: FC = () => {
     if (chatData?.length === 1) {
       scrollbarRef.current?.scrollToBottom();
     }
+    console.log('user', userData);
   }, [chatData]);
 
   const onSubmitForm = useCallback(
